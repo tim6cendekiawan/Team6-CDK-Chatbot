@@ -11,10 +11,16 @@ import pytz
 # Constants
 DEFAULT_API_KEY = "be06563022d9991254cfb79daac5c38fe19d3e0f9f1ef5d3d45b968a3ef85324"
 DEFAULT_BASE_URL = "https://api.together.xyz/v1"
-DEFAULT_MODEL = "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo"
+DEFAULT_MODEL = "Qwen/Qwen2.5-72B-Instruct-Turbo"
 DEFAULT_TEMPERATURE = 0.6
 DEFAULT_MAX_TOKENS = 1096
 DEFAULT_TOKEN_BUDGET = 4096
+
+def convert_to_wib(utc_time):
+    wib_zone = pytz.timezone('Asia/Jakarta')
+    if isinstance(utc_time, datetime):
+        return utc_time.astimezone(wib_zone)
+    return None
 
 
 # ConversationManager class to handle AI conversation
@@ -29,7 +35,7 @@ class ConversationManager:
         self.max_tokens = max_tokens or DEFAULT_MAX_TOKENS
         self.token_budget = token_budget or DEFAULT_TOKEN_BUDGET
 
-        self.system_message = "You are a friendly and supportive assistant. You answer with kindness and patience."
+        self.system_message = "You are a friendly and supportive daily planner assistant, your name is ARIA and you generate a scheduke in GMT 07 OR indonesian hours only. You answer with kindness and patience. and breakdown to point point"
         self.conversation_history = [{"role": "system", "content": self.system_message}]
 
     # Function to count tokens in a given text
@@ -40,7 +46,7 @@ class ConversationManager:
             encoding = tiktoken.get_encoding("cl100k_base")
         tokens = encoding.encode(text)
         return len(tokens)
-
+    
     # Function to calculate the total tokens used in the conversation
     def total_tokens_used(self):
         try:
@@ -48,7 +54,8 @@ class ConversationManager:
         except Exception as e:
             print(f"Error calculating total tokens: {e}")
             return None
-
+    
+    
     # Function to ensure the token usage does not exceed the budget
     def enforce_token_budget(self):
         try:
@@ -61,6 +68,17 @@ class ConversationManager:
 
     # Function to get AI response based on user input
     def chat_completion(self, prompt, temperature=None, max_tokens=None, model=None):
+        calendar_data = st.session_state.get("calendar_data", None)
+
+        # Only add calendar to prompt if it exists and not previously added
+        if calendar_data and not st.session_state.get("calendar_used_in_prompt", False):
+            calendar_info = "\n".join(
+                [f"Event: {event['summary']} | Start: {convert_to_wib(event['start']).strftime('%Y-%m-%d %H:%M')} | End: {convert_to_wib(event['end']).strftime('%Y-%m-%d %H:%M') if event['end'] else 'No End Time'}"
+                 for event in calendar_data]
+            )
+            prompt = f"Here are some calendar events:\n{calendar_info}\n\n{prompt}"
+            st.session_state["calendar_used_in_prompt"] = True  # Mark calendar as used
+
         temperature = temperature or self.temperature
         max_tokens = max_tokens or self.max_tokens
         model = model or self.model
@@ -88,6 +106,7 @@ class ConversationManager:
     def reset_conversation_history(self):
         self.conversation_history = [{"role": "system", "content": self.system_message}]
 
+    
 
 # CalendarManager class to handle calendar functionality
 class CalendarManager:
@@ -113,8 +132,19 @@ class CalendarManager:
             print(f"Error parsing ICS file: {e}")
             return False
 
+    def convert_to_wib(self, utc_time):
+        # Western Indonesia Time Zone (WIB)
+        wib_zone = pytz.timezone('Asia/Jakarta')
+        
+        # Make sure the UTC time received is datetime
+        if isinstance(utc_time, datetime):
+            # Convert UTC time to WIB
+            wib_time = utc_time.astimezone(wib_zone)
+            return wib_time
+        return None
+        
 
-# Function to add calendar upload section in Streamlit sidebar
+# Function to add calendar upload (outside Calendar Manager class)
 def add_calendar_upload():
     st.sidebar.write("Calendar Import")
     uploaded_file = st.sidebar.file_uploader("Upload ICS File", type=['ics'])
@@ -125,19 +155,30 @@ def add_calendar_upload():
 
         if calendar_manager.parse_ics_file(ics_content):
             st.sidebar.success("Calendar successfully imported!")
+            st.session_state["calendar_added"] = False  # Reset calendar processing state
+            st.session_state["calendar_data"] = calendar_manager.events
+            st.session_state["calendar_prompt_added"] = False  # Reset flag for prompt addition
             st.write("### Imported Calendar Events")
             for event in calendar_manager.events:
+                start_time_wib = convert_to_wib(event['start'])
+                end_time_wib = convert_to_wib(event['end']) if event['end'] else None
                 with st.expander(f"📅 {event['summary']}"):
-                    st.write(f"**Start:** {event['start'].strftime('%Y-%m-%d %H:%M')}")
-                    if event['end']:
-                        st.write(f"**End:** {event['end'].strftime('%Y-%m-%d %H:%M')}")
+                    if start_time_wib:
+                        st.write(f"**Start:** {start_time_wib.strftime('%Y-%m-%d %H:%M')}")
+                    else:
+                        st.write("**Start:** No start time")
+
+                    if end_time_wib:
+                        st.write(f"**End:** {end_time_wib.strftime('%Y-%m-%d %H:%M')}")
+                    else:
+                        st.write("**End:** No end time")
+                    
                     if event['location']:
                         st.write(f"**Location:** {event['location']}")
                     if event['description']:
                         st.write(f"**Description:** {event['description']}")
         else:
             st.sidebar.error("Error importing calendar file")
-
 
 # Function to retrieve EC2 instance ID
 def get_instance_id():
@@ -192,15 +233,6 @@ with st.sidebar:
     st.write("Settings")
     set_token = st.slider("Max Tokens per Message", 10, 1096, DEFAULT_MAX_TOKENS, step=1)
     st.session_state['chat_manager'].max_tokens = set_token
-
-    #Customize the chatbot's personality
-    set_custom_message = st.selectbox("System Message", ("Professional", "Friendly", "Humorous"))
-    if set_custom_message == "Professional":
-        custom_message = "You are a professional assistant. You provide accurate and reliable information, and you are always willing to answer questions and help the user achieve their goals."
-    elif set_custom_message == "Friendly":
-        custom_message = "You are a friendly and supportive guide. You answer questions with kindness, encouragement, and patience, always looking to help the user feel comfortable and confident."
-    elif set_custom_message == "Humorous":
-        custom_message = "You are a humorous companion, adding fun to the conversation."
 
 
     set_temp = st.slider("Temperature", 0.0, 1.0, DEFAULT_TEMPERATURE, step=0.1)
