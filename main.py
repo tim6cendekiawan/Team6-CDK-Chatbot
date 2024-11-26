@@ -35,7 +35,7 @@ class ConversationManager:
         self.max_tokens = max_tokens or DEFAULT_MAX_TOKENS
         self.token_budget = token_budget or DEFAULT_TOKEN_BUDGET
 
-        self.system_message = "You are a friendly and supportive daily planner assistant, your name is ARIA and you generate a scheduke in GMT 07 OR indonesian hours only. You answer with kindness and patience. and breakdown to point point"
+        self.system_message = "You are a friendly and supportive daily planner assistant, your name is ARIA (Assistant for Reminders, Information, and Agendas) and you generate a scheduke in GMT 07 OR indonesian hours only. You answer with kindness and patience. and breakdown to point point"
         self.conversation_history = [{"role": "system", "content": self.system_message}]
 
     # Function to count tokens in a given text
@@ -68,23 +68,29 @@ class ConversationManager:
 
     # Function to get AI response based on user input
     def chat_completion(self, prompt, temperature=None, max_tokens=None, model=None):
+
         calendar_data = st.session_state.get("calendar_data", None)
 
         # Only add calendar to prompt if it exists and not previously added
         if calendar_data and not st.session_state.get("calendar_used_in_prompt", False):
             calendar_info = "\n".join(
                 [f"Event: {event['summary']} | Start: {convert_to_wib(event['start']).strftime('%Y-%m-%d %H:%M')} | End: {convert_to_wib(event['end']).strftime('%Y-%m-%d %H:%M') if event['end'] else 'No End Time'}"
-                 for event in calendar_data]
+                for event in calendar_data]
             )
-            prompt = f"Here are some calendar events:\n{calendar_info}\n\n{prompt}"
-            st.session_state["calendar_used_in_prompt"] = True  # Mark calendar as used
+            # Add calendar prompt as "system" message
+            self.conversation_history.insert(0, {
+                "role": "system",
+                "content": f"Here are some calendar events:\n{calendar_info}"
+            })
+            st.session_state["calendar_used_in_prompt"] = True # Mark calendar as used
+
+        # Tambahkan prompt user ke dalam percakapan
+        self.conversation_history.append({"role": "user", "content": prompt})
+        self.enforce_token_budget()  # Pastikan token tidak melebihi batas
 
         temperature = temperature or self.temperature
         max_tokens = max_tokens or self.max_tokens
         model = model or self.model
-
-        self.conversation_history.append({"role": "user", "content": prompt})
-        self.enforce_token_budget()
 
         try:
             response = self.client.chat.completions.create(
@@ -101,6 +107,7 @@ class ConversationManager:
         self.conversation_history.append({"role": "assistant", "content": ai_response})
 
         return ai_response
+
 
     # Function to reset the conversation history
     def reset_conversation_history(self):
@@ -224,9 +231,10 @@ if user_input:
 
 # Display conversation history
 for message in chat_manager.conversation_history:
-    if message["role"] != "system":
+    if message["role"] != "system":  # Ignore system messages
         with st.chat_message(message["role"]):
             st.write(message["content"])
+
 
 # Sidebar options for chatbot settings
 with st.sidebar:
