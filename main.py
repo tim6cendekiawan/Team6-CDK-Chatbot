@@ -207,7 +207,7 @@ def get_instance_id():
 
 
 # Main Streamlit application
-st.title("AI Chatbot")
+st.title("ARIA Chatbot")
 
 # Display EC2 Instance ID
 instance_id = get_instance_id()
