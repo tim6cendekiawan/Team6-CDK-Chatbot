@@ -1,27 +1,39 @@
 from openai import OpenAI
 import tiktoken
 import requests
+from dotenv import load_dotenv
 import os
 import streamlit as st
 from icalendar import Calendar
 from datetime import datetime
 import pytz
+from streamlit_option_menu import option_menu
+# Muat file .env
+load_dotenv()
 
+# Ambil nilai dari variabel lingkungan yang telah disimpan di .env
+DEFAULT_API_KEY = os.getenv("DEFAULT_API_KEY")
+DEFAULT_BASE_URL = os.getenv("DEFAULT_BASE_URL")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL")
+DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", 0.6))
+DEFAULT_MAX_TOKENS = int(os.getenv("DEFAULT_MAX_TOKENS", 1096))
+DEFAULT_TOKEN_BUDGET = int(os.getenv("DEFAULT_TOKEN_BUDGET", 4096))
 
-# Constants
-DEFAULT_API_KEY = "be06563022d9991254cfb79daac5c38fe19d3e0f9f1ef5d3d45b968a3ef85324"
-DEFAULT_BASE_URL = "https://api.together.xyz/v1"
-DEFAULT_MODEL = "Qwen/Qwen2.5-72B-Instruct-Turbo"
-DEFAULT_TEMPERATURE = 0.6
-DEFAULT_MAX_TOKENS = 1096
-DEFAULT_TOKEN_BUDGET = 4096
+st.set_page_config(
+    page_title="ARIA Chatbot",
+    page_icon="🤖",
+    layout="centered",
+    initial_sidebar_state="expanded",
+)
+st.image("assets/aria.png", width=250)
+
 
 def convert_to_wib(utc_time):
     wib_zone = pytz.timezone('Asia/Jakarta')
     if isinstance(utc_time, datetime):
         return utc_time.astimezone(wib_zone)
     return None
-
+st.markdown("Assistant for Reminders, Information, and Agendas")
 
 # ConversationManager class to handle AI conversation
 class ConversationManager:
@@ -104,6 +116,8 @@ class ConversationManager:
             return None
 
         ai_response = response.choices[0].message.content
+        self.ai_response = ai_response
+
         self.conversation_history.append({"role": "assistant", "content": ai_response})
 
         return ai_response
@@ -153,7 +167,11 @@ class CalendarManager:
 
 # Function to add calendar upload (outside Calendar Manager class)
 def add_calendar_upload():
-    st.sidebar.write("Calendar Import")
+    st.sidebar.markdown("""
+        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+            Calendar Import
+        </div>
+    """, unsafe_allow_html=True)
     uploaded_file = st.sidebar.file_uploader("Upload ICS File", type=['ics'])
 
     if uploaded_file:
@@ -186,6 +204,9 @@ def add_calendar_upload():
                         st.write(f"**Description:** {event['description']}")
         else:
             st.sidebar.error("Error importing calendar file")
+    st.sidebar.markdown("""
+        <hr style="border: 1px solid #fefae0; margin-top: 0px; margin-bottom: 0px;">
+    """, unsafe_allow_html=True)
 
 # Function to retrieve EC2 instance ID
 def get_instance_id():
@@ -205,14 +226,6 @@ def get_instance_id():
     except requests.exceptions.RequestException:
         return "Instance ID not available (local or retrieval error)"
 
-
-# Main Streamlit application
-st.title("ARIA Chatbot")
-
-# Display EC2 Instance ID
-instance_id = get_instance_id()
-st.write(f"**EC2 Instance ID**: {instance_id}")
-
 # Initialize ConversationManager object
 if 'chat_manager' not in st.session_state:
     st.session_state['chat_manager'] = ConversationManager()
@@ -220,6 +233,24 @@ if 'chat_manager' not in st.session_state:
 chat_manager = st.session_state['chat_manager']
 
 # User input for chat
+st.markdown("""
+    <style>
+    /* placeholder text input */
+    .stChatInput textarea::placeholder {
+        color: black;
+    }
+
+    /* button send text input */
+    .stChatInput button {
+        color: black !important;
+        cursor: pointer;
+    }
+
+    .stChatInput button:hover {
+        background-color: #45a049 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 user_input = st.chat_input("Write a message")
 
 # Calendar upload section
@@ -232,13 +263,20 @@ if user_input:
 # Display conversation history
 for message in chat_manager.conversation_history:
     if message["role"] != "system":  # Ignore system messages
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+        if message["role"] == "user":
+            with st.chat_message("user"):
+                st.markdown(f"<p style='color: blue; text-align: right'>{message['content']}</p>", unsafe_allow_html=True)
+        elif message["role"] == "assistant":
+            with st.chat_message("assistant"):
+                st.markdown(f"<p style='color: green'>{message['content']}</p>", unsafe_allow_html=True)
 
 
 # Sidebar options for chatbot settings
 with st.sidebar:
-    st.write("Settings")
+    st.sidebar.markdown("""
+        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+            Settings
+    """, unsafe_allow_html=True)
     set_token = st.slider("Max Tokens per Message", 10, 1096, DEFAULT_MAX_TOKENS, step=1)
     st.session_state['chat_manager'].max_tokens = set_token
 
@@ -246,7 +284,41 @@ with st.sidebar:
     set_temp = st.slider("Temperature", 0.0, 1.0, DEFAULT_TEMPERATURE, step=0.1)
     st.session_state['chat_manager'].temperature = set_temp
 
-    st.write("Reset Conversation")
-    if st.button("Reset"):
-        chat_manager.reset_conversation_history()
-        st.rerun()
+    # st.sidebar.markdown("""
+    #     <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+    #         Reset Conversation
+    #     </div>
+    # """, unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+            .full-width-button {
+                display: block;
+                width: 100%;
+                background-color: #4CAF50; /* Hijau */
+                color: white;
+                padding: 8px 20px;
+                font-size: 16px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            .full-width-button:hover {
+                background-color: #45a049;
+            }
+        </style>
+        <button class="full-width-button" onclick="window.location.reload();">
+            Reset Conversation
+        </button>
+    """, unsafe_allow_html=True)
+
+    # Display EC2 Instance ID
+    instance_id = get_instance_id()
+    st.sidebar.markdown(
+        f"""
+        <div style=" margin-top: 20px; width: 100%; text-align: center; font-weight: 600">
+            EC2 Instance ID: {instance_id}
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
