@@ -243,17 +243,17 @@ def analyze_activity_schedule(calendar_data):
 
     return activity_df, recommendation
 
-# def plot_activity_analysis(activity_df):
-#     activity_summary = activity_df.groupby('Event')['Duration (hours)'].sum().sort_values(ascending=False)
+def plot_activity_analysis(activity_df):
+    activity_summary = activity_df.groupby('Event')['Duration (hours)'].sum().sort_values(ascending=False)
     
-#     plt.figure(figsize=(10,6))
-#     activity_summary.plot(kind='bar', color=['#FF6347', '#4682B4', '#32CD32'])
-#     plt.title('Activity Analysis')
-#     plt.xlabel('Activity Type')
-#     plt.ylabel('Total Duration (hours)')
-#     plt.xticks(rotation=45)
-#     plt.tight_layout()
-#     st.pyplot(plt)
+    plt.figure(figsize=(10,6))
+    activity_summary.plot(kind='bar', color=['#FF6347', '#4682B4', '#32CD32'])
+    plt.title('Activity Analysis')
+    plt.xlabel('Activity Type')
+    plt.ylabel('Total Duration (hours)')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    st.pyplot(plt)
 
 def analyze_and_visualize_schedule():
     if "schedule" not in st.session_state or not st.session_state["schedule"]:
