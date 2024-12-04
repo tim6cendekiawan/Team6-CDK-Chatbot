@@ -92,17 +92,27 @@ class ConversationManager:
     # Tambahkan flag untuk melacak apakah rekomendasi sudah diberikan
     if "recommendation_added" not in st.session_state:
         st.session_state["recommendation_added"] = False
-    
+
+
     # Function to get AI response based on user input
     def chat_completion(self, prompt, temperature=None, max_tokens=None, model=None):
+
         calendar_data = st.session_state.get("calendar_data", None)
-        
-        # Menambahkan prompt terkait rekomendasi hanya jika belum pernah ditambahkan
+
+        # Only add calendar to prompt if it exists and not previously added
         recommendation_prompt = ""
-        if calendar_data and not st.session_state["recommendation_added"]:
+        if calendar_data and not st.session_state.get("recommendation_added", False):
             activity_df, recommendation = analyze_activity_schedule(calendar_data)
-            # recommendation_prompt = "\n\nI noticed you have a schedule. Would you like me to suggest some improvements or add recommendations?"
-            st.session_state["recommendation_added"] = True  # Menandai bahwa rekomendasi sudah ditambahkan
+            calendar_info = "\n".join(
+                [f"Event: {event['summary']} | Start: {convert_to_wib(event['start']).strftime('%Y-%m-%d %H:%M')} | End: {convert_to_wib(event['end']).strftime('%Y-%m-%d %H:%M') if event['end'] else 'No End Time'}"
+                for event in calendar_data]
+            )
+            # Add calendar prompt as "system" message
+            self.conversation_history.insert(0, {
+                "role": "system",
+                "content": f"Here are some calendar events:\n{calendar_info}"
+            })
+            st.session_state["recommendation_added"] = True # Mark calendar as used
         
         prompt += recommendation_prompt  # Menambahkan prompt ke input pengguna
         
@@ -233,17 +243,17 @@ def analyze_activity_schedule(calendar_data):
 
     return activity_df, recommendation
 
-def plot_activity_analysis(activity_df):
-    activity_summary = activity_df.groupby('Event')['Duration (hours)'].sum().sort_values(ascending=False)
+# def plot_activity_analysis(activity_df):
+#     activity_summary = activity_df.groupby('Event')['Duration (hours)'].sum().sort_values(ascending=False)
     
-    plt.figure(figsize=(10,6))
-    activity_summary.plot(kind='bar', color=['#FF6347', '#4682B4', '#32CD32'])
-    plt.title('Activity Analysis')
-    plt.xlabel('Activity Type')
-    plt.ylabel('Total Duration (hours)')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    st.pyplot(plt)
+#     plt.figure(figsize=(10,6))
+#     activity_summary.plot(kind='bar', color=['#FF6347', '#4682B4', '#32CD32'])
+#     plt.title('Activity Analysis')
+#     plt.xlabel('Activity Type')
+#     plt.ylabel('Total Duration (hours)')
+#     plt.xticks(rotation=45)
+#     plt.tight_layout()
+#     st.pyplot(plt)
 
 def analyze_and_visualize_schedule():
     if "schedule" not in st.session_state or not st.session_state["schedule"]:
@@ -254,12 +264,12 @@ def analyze_and_visualize_schedule():
     activity_df, recommendation = analyze_activity_schedule(schedule_data)
     st.session_state["recommendation"] = recommendation  # Simpan rekomendasi
 
-    # Tampilkan rekomendasi
-    st.write("### Schedule Analysis")
-    st.write(recommendation)
+    # # Tampilkan rekomendasi
+    # st.write("### Schedule Analysis")
+    # st.write(recommendation)
 
     # Plot analisis
-    plot_activity_analysis(activity_df)
+    # plot_activity_analysis(activity_df)
 
 if "schedule" in st.session_state:
     analyze_and_visualize_schedule()
@@ -348,13 +358,13 @@ if user_input:
                 f"{convert_to_wib(event['start']).strftime('%H:%M')} - {convert_to_wib(event['end']).strftime('%H:%M')} : {event['summary']}" 
                 for event in schedule
             )
-            response = f"Berikut adalah jadwal Anda:\n{formatted_schedule}"
+            # response = f"Berikut adalah jadwal Anda:\n{formatted_schedule}"
         else:
             response = "Saya tidak menemukan data jadwal. Silakan unggah kalender Anda terlebih dahulu."
 
-        # Tambahkan ke riwayat percakapan hanya jika belum ada respons yang duplikat
-        chat_manager.conversation_history.append({"role": "assistant", "content": response})
-        st.chat_message("assistant").markdown(response)
+        # # Tambahkan ke riwayat percakapan hanya jika belum ada respons yang duplikat
+        # chat_manager.conversation_history.append({"role": "assistant", "content": response})
+        # st.chat_message("assistant").markdown(response)
 
 
 
@@ -431,30 +441,6 @@ with st.sidebar:
         set_temp = st.slider("Temperature", 0.0, 1.0, DEFAULT_TEMPERATURE, step=0.1)
         st.session_state['chat_manager'].temperature = set_temp
 
-        # Tombol untuk Reset Percakapan
-        st.markdown("""
-            <style>
-                .full-width-button {
-                    display: block;
-                    width: 100%;
-                    background-color: #4CAF50; /* Hijau */
-                    color: white;
-                    padding: 8px 20px;
-                    font-size: 16px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-
-                .full-width-button:hover {
-                    background-color: #45a049;
-                }
-            </style>
-            <button class="full-width-button" onclick="window.location.reload();">
-                Reset Conversation
-            </button>
-        """, unsafe_allow_html=True)
-
         # Tampilkan EC2 Instance ID
         instance_id = get_instance_id()
         st.sidebar.markdown(
@@ -465,3 +451,32 @@ with st.sidebar:
             """, 
             unsafe_allow_html=True
         )
+    
+    # # Tombol untuk Reset Percakapan
+    # st.markdown("""
+    #     <style>
+    #         .full-width-button {
+    #             display: block;
+    #             width: 100%;
+    #             background-color: #4CAF50; /* Hijau */
+    #             color: white;
+    #             padding: 8px 20px;
+    #             font-size: 16px;
+    #             border: none;
+    #             border-radius: 4px;
+    #             cursor: pointer;
+    #         }
+
+    #         .full-width-button:hover {
+    #             background-color: #45a049;
+    #         }
+    #     </style>
+    #     <button class="full-width-button" onclick="window.location.reload();">
+    #         Reset Conversation
+    #     </button>
+    # """, unsafe_allow_html=True)
+
+
+    if st.button("Reset Conversation"):
+        chat_manager.reset_conversation_history()
+        st.rerun()
