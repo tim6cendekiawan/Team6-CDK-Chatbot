@@ -32,7 +32,7 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
 )
-st.image("assets/ariaa.png")
+st.image("/assets/ariaa.png")
 st.markdown(
     """
     <p style='font-size: 18px; text-align: center;'>
