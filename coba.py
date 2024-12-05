@@ -32,15 +32,19 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
 )
-st.image("assets/aria.png", width=250)
-
+st.image("assets/ariaa.png")
+st.markdown(
+    """
+    <p style='font-size: 18px; text-align: center;'>
+        Assistant for Reminders, Information, and Agendas
+    </p>
+    """, unsafe_allow_html=True)
 
 def convert_to_wib(utc_time):
     wib_zone = pytz.timezone('Asia/Jakarta')
     if isinstance(utc_time, datetime):
         return utc_time.astimezone(wib_zone)
     return None
-st.markdown("Assistant for Reminders, Information, and Agendas")
 
 # ConversationManager class to handle AI conversation
 class ConversationManager:
@@ -183,15 +187,48 @@ class CalendarManager:
             wib_time = utc_time.astimezone(wib_zone)
             return wib_time
         return None
+ 
+st.markdown("""
+    <style>
+    /* Ubah tampilan file uploader */
+    .stFileUploader label {
+        font-weight: bold;
+        color: #6b705c;
+        font-size: 16px;
+    }
+    .stFileUploader div[data-testid="stFileUploadDropzone"] {
+        border: 2px dashed #d3c0a7;
+        border-radius: 10px;
+        padding: 15px;
+        background-color: #fefae0;
+        text-align: center;
+    }
+    .stFileUploader div[data-testid="stFileUploadDropzone"]:hover {
+        background-color: #f5e8c7;
+    }
+    .stFileUploader button {
+        background-color: #d3c0a7;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+    }
+    .stFileUploader button:hover {
+        background-color: #b7a38b;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)        
+ 
         
 # Function to add calendar upload (outside Calendar Manager class)
 def add_calendar_upload():
     st.sidebar.markdown("""
-        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+        <div style="font-weight: 600; font-size: 16px;">
             Calendar Import
         </div>
     """, unsafe_allow_html=True)
-    uploaded_file = st.sidebar.file_uploader("Upload ICS File", type=['ics'])
+    uploaded_file = st.sidebar.file_uploader("Upload Your ICS File", type=['ics'])
 
     if uploaded_file:
         calendar_manager = CalendarManager()
@@ -315,9 +352,6 @@ st.markdown("""
         cursor: pointer;
     }
 
-    .stChatInput button:hover {
-        background-color: #45a049 !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 user_input = st.chat_input("Write a message")
@@ -366,45 +400,95 @@ if user_input:
         # chat_manager.conversation_history.append({"role": "assistant", "content": response})
         # st.chat_message("assistant").markdown(response)
 
-
+st.markdown("""
+                <style>
+                .stChatMessage {
+                   background-color: transparent;
+                }
+                </style>
+            """, unsafe_allow_html=True)
 
 # Display conversation history
 for message in chat_manager.conversation_history:
     if message["role"] != "system":  # Ignore system messages
         if message["role"] == "user":
             with st.chat_message("user"):
-                st.markdown(f"<p style='color: blue; text-align: right'>{message['content']}</p>", unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div style="background-color: #dbc6a7; border-radius: 10px; padding: 10px;">
+                        <p style='color: black'>{message['content']}</p>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
         elif message["role"] == "assistant":
             with st.chat_message("assistant"):
-                st.markdown(f"<p style='color: green'>{message['content']}</p>", unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div style="background-color:  #b19a70; border-radius: 10px; padding: 10px;">
+                        <p style='color: black'>{message['content']}</p>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
 
 
 # Sidebar options for chatbot settings
 with st.sidebar:
     selected = option_menu(
         menu_title=None,
-        options=["Import", "Calender", "Settings"],  # Menambahkan "Settings" dalam tanda kutip
+        options=["Import Calendar", "My Calendar", "Settings"],  # Menambahkan "Settings" dalam tanda kutip
         icons=["cloud-arrow-up", "calendar", "gear"],  # Ikon untuk masing-masing menu
-        default_index=0
+        default_index=0,styles={
+            "container": {"padding": "5px", "background-color": "#fefae0"},
+            "nav-link": {"font-size": "15px",  "text-align": "left", "margin": "0px"},
+            "nav-link-selected": {"background-color": "#d3c0a7", "font-weight": "500","color": "white"},
+        }
     )
 
     # Menu untuk Import (Upload ICS File)
-    if selected == "Import":
+    if selected == "Import Calendar":
         add_calendar_upload()
 
     # Menu untuk Calendar (Menampilkan Kalender dan Acara yang Diimpor)
-    if selected == "Calender":
+    if selected == "My Calendar":
     # Check if calendar data exists in session state
         if "calendar_data" in st.session_state and st.session_state["calendar_data"]:
-            st.write("### Imported Calendar Events")
+            st.markdown("""
+                <style>
+                .custom-title {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: black; 
+                    margin-bottom: 5px;
+                }
+                </style>
+                <div class="custom-title">Imported Calendar Events</div>
+            """, unsafe_allow_html=True)
             
             # Loop through the events and display them in the main area
             for event in st.session_state["calendar_data"]:
                 start_time_wib = convert_to_wib(event['start'])
                 end_time_wib = convert_to_wib(event['end']) if event['end'] else None
-                
-                # Using expander to display the details of each event
-                with st.expander(f"📅 {event['summary']}"):
+                # st.markdown("""
+                #     <style>
+                #     .stExpander {
+                #         border: 1px solid #d3c0a7; /* Border ringan */
+                #         background-color: #fefae0; /* Warna latar belakang */
+                #         border-radius: 8px; /* Membuat sudut rounded */
+                #         transition: background-color 0.3s ease; /* Animasi transisi */
+                #     }
+                #     .stExpander:hover {
+                #         background-color: #b7a38b; /* Warna lebih gelap saat hover */
+                #     }
+                #     /* Teks di dalam expander */
+                #     .stExpander .stMarkdown {
+                #         color: black; /* Warna teks */
+                #     }
+                #     </style>
+                # """, unsafe_allow_html=True)
+            # Using expander to display the details of each event
+                with st.expander(f"📅 **{event['summary']}**"):
                     if start_time_wib:
                         st.write(f"**Start:** {start_time_wib.strftime('%Y-%m-%d %H:%M')}")
                     else:
@@ -420,15 +504,13 @@ with st.sidebar:
                     if event.get('description'):
                         st.write(f"**Description:** {event['description']}")
         else:
-            st.write("No calendar events found. Please upload a calendar file.")
+            st.error("No calendar events found. Please upload a calendar file.")
 
     # Menu untuk Settings
-    elif selected == "Settings":
-        st.write("You selected Settings")
-        
+    elif selected == "Settings":        
         # Pengaturan Max Tokens dan Temperature
         st.sidebar.markdown("""
-            <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+            <div style="font-weight: 600; font-size: 16px;">
                 Settings
             </div>
         """, unsafe_allow_html=True)
@@ -451,32 +533,29 @@ with st.sidebar:
             """, 
             unsafe_allow_html=True
         )
-    
-    # # Tombol untuk Reset Percakapan
-    # st.markdown("""
-    #     <style>
-    #         .full-width-button {
-    #             display: block;
-    #             width: 100%;
-    #             background-color: #4CAF50; /* Hijau */
-    #             color: white;
-    #             padding: 8px 20px;
-    #             font-size: 16px;
-    #             border: none;
-    #             border-radius: 4px;
-    #             cursor: pointer;
-    #         }
+    st.markdown("""
+        <style>
+        .stSidebar Button {
+            background-color: #fefae0;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            display: block;
+            width: 100%;
+        }
+        .stSidebar Button:hover {
+            background-color: #e4d7b6;
+            color: black;
+        }
 
-    #         .full-width-button:hover {
-    #             background-color: #45a049;
-    #         }
-    #     </style>
-    #     <button class="full-width-button" onclick="window.location.reload();">
-    #         Reset Conversation
-    #     </button>
-    # """, unsafe_allow_html=True)
+        .stSidebar write{
+            color: black !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-
-    if st.button("Reset Conversation"):
+    if st.sidebar.button("Reset Conversation"):
+        st.sidebar.write("Conversation reset!")
         chat_manager.reset_conversation_history()
-        st.rerun()
+        st.rerun() 
