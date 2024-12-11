@@ -125,11 +125,9 @@ By integrating these technologies and tools, ARIA provides users with a seamless
 - [GitHub Repository](https://github.com/tim6cendekiawan/Team6-CDK-Chatbot)
 
 ---
-### Copyright
-© 2024 Tim 6 Cendekiawan. All rights reserved.
+
 
 # Copyright
-
 © 2024 **Tim 6 Cendekiawan**. All rights reserved.
 
 This project was developed as part of the **MSIB program** at **RevoU** by **Team 6 Cendekiawan**. We would like to extend our sincere gratitude to our esteemed partners for their continuous support and valuable contributions throughout the development of this project. Their collaboration was instrumental in bringing ARIA to life.
