@@ -61,28 +61,16 @@ This project uses the following libraries:
 
 ### How to Export Calendar from Google to .ICS File
 
-To import your Google Calendar into ARIA, you'll need to export it as a `.ICS` file. Follow these steps:
+## Importing Google Calendar to ARIA
 
-1. **Open Google Calendar**:
-   - Go to [Google Calendar](https://calendar.google.com) and log in to your Google account.
+### Step 1: Export Google Calendar
+1. Open [Google Calendar](https://calendar.google.com).
+2. Click the gear icon > **Settings**.
+3. Under **Import & Export**, click **Export** to download the .ics file.
 
-2. **Go to Calendar Settings**:
-   - On the left side, find the calendar you want to export under "My calendars."
-   - Hover over the calendar name, click the three vertical dots that appear, and choose **Settings and sharing**.
-
-3. **Export the Calendar**:
-   - Scroll down to the **Integrate calendar** section.
-   - Look for the **Secret address in iCal format**. This is the link to your calendar in `.ICS` format.
-   - Copy the link.
-
-4. **Download the .ICS File**:
-   - Paste the copied link into your browser's address bar and press **Enter**.
-   - The `.ICS` file will be downloaded automatically.
-
-5. **Upload the .ICS File to ARIA**:
-   - After you have the `.ICS` file, go back to ARIA and use the **Upload** option to import the file.
-
-Now, your Google Calendar events will be integrated into ARIA, and you can start managing and receiving schedule recommendations.
+### Step 2: Import into ARIA
+1. In ARIA, navigate to the left side panel and click **Browse** to select the `.ics` file.
+2. Upload the file, and your calendar events will be imported into ARIA.
 
 ## Appendix
 
