@@ -1,6 +1,6 @@
 # ARIA (Assistant for Reminders, Information, and Agendas)
 
-<img src:https://github.com/tim6cendekiawan/Team6-CDK-Chatbot/blob/ffbb1561850c0f140fb40cb8ba78cd9e639e65f5/assets/Aria%20chatbot.png width="70%" height="70%" />
+<img src = https://raw.githubusercontent.com/tim6cendekiawan/Team6-CDK-Chatbot/refs/heads/main/assets/Aria%20chatbot.png width="70%" height="70%" />
 
 
 ## About
