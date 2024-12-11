@@ -1,6 +1,6 @@
 # ARIA (Assistant for Reminders, Information, and Agendas)
 
-![ARIA Logo](https://via.placeholder.com/150)
+![ARIA Logo](assets/Aria chatbot.png)
 
 ## About
 **ARIA** is a smart chatbot designed to assist users in organizing their daily schedules more easily and efficiently. This project is developed as part of the **MSIB program at RevoU** by **Team 6 Cendekiawan**. ARIA integrates modern technology to provide users with a practical and flexible experience.
@@ -48,7 +48,7 @@ This project uses the following libraries:
 
 4. Run the application :
    ```bash
-   streamlit run app.py
+   streamlit run main.py
    ```
 
 ## How to Use
