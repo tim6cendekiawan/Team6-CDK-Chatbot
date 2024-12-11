@@ -1,0 +1,12 @@
+openai
+tiktoken
+requests
+python-dotenv
+streamlit
+icalendar
+pytz
+datetime
+streamlit-option-menu
+matplotlib
+pandas
+numpy
